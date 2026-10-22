@@ -48,10 +48,10 @@ class PublicWebsiteController extends Controller
 
             return [
                 'settings' => $publicSettings,
-                'hero_media' => $heroMedia,
+                'hero_media' => $heroMedia ? $heroMedia->toArray() : null,
                 'menus' => [
-                    'header' => $menus['header'] ?? [],
-                    'footer' => $menus['footer'] ?? [],
+                    'header' => array_values(is_array($menus['header'] ?? null) ? $menus['header'] : ($menus['header']?->all() ?? [])),
+                    'footer' => array_values(is_array($menus['footer'] ?? null) ? $menus['footer'] : ($menus['footer']?->all() ?? [])),
                 ],
                 'featured_rooms' => RoomContent::published()
                     ->with('featuredMedia')

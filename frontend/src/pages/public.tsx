@@ -38,6 +38,9 @@ export function PublicLayout() {
   const { hotel, website, booking } = settings
   const locationText = [hotel.city, hotel.state, hotel.country].filter(Boolean).join(', ')
 
+  const headerItems = Array.isArray(menus?.header) ? menus.header : []
+  const footerItems = Array.isArray(menus?.footer) ? menus.footer : []
+
   if (website.maintenance_mode && !user) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-brand-900 px-4 text-center text-white">
@@ -108,7 +111,7 @@ export function PublicLayout() {
             </Link>
 
             <nav aria-label="Primary website navigation" className="hidden items-center gap-1 lg:flex">
-              {menus.header.map((item, idx) => (
+              {headerItems.map((item, idx) => (
                 <NavLink
                   key={`${item.url}-${idx}`}
                   to={item.url}
@@ -144,7 +147,7 @@ export function PublicLayout() {
           {mobileMenu && (
             <nav aria-label="Mobile website navigation" className="border-t border-slate-200 bg-white px-4 py-3 lg:hidden">
               <ul className="space-y-1">
-                {menus.header.map((item, idx) => (
+                {headerItems.map((item, idx) => (
                   <li key={`${item.url}-${idx}`}>
                     <NavLink
                       to={item.url}
@@ -188,7 +191,7 @@ export function PublicLayout() {
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-brand-200">Quick Links</h2>
               <ul className="mt-3 space-y-2 text-sm">
-                {menus.footer.map((item, idx) => (
+                {footerItems.map((item, idx) => (
                   <li key={`${item.url}-${idx}`}>
                     <Link to={item.url} target={item.target} className="text-brand-100/80 hover:text-white">
                       {item.label}
