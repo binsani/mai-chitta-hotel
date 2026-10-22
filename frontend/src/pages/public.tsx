@@ -714,23 +714,23 @@ export function HomePage() {
                     id: 'std',
                     name: 'Standard Room',
                     slug: 'standard-room',
-                    teaser: 'Serene guestroom with king bed, desk and ensuite bath.',
+                    teaser: 'Serene guestroom with king bed, executive work desk and ensuite bath.',
                     min_price_cents: 2500000,
-                    featured_media: { url: '/hotel/lobby-monstera-planters.webp', alt_text: 'Standard Room' },
+                    featured_media: { url: '/hotel/PXL_20261019_193436703.webp', alt_text: 'Standard Room' },
                   },
                   {
                     id: 'dlx',
                     name: 'Deluxe Room',
                     slug: 'deluxe-room',
-                    teaser: 'Spacious sanctuary featuring lounge seating and city views.',
+                    teaser: 'Spacious sanctuary featuring lounge seating, warm ambient light, and city views.',
                     min_price_cents: 3500000,
-                    featured_media: { url: '/hotel/reception-hallway-planters.webp', alt_text: 'Deluxe Room' },
+                    featured_media: { url: '/hotel/PXL_20261019_193614111.webp', alt_text: 'Deluxe Room' },
                   },
                   {
                     id: 'exec',
                     name: 'Executive Suite',
                     slug: 'executive-suite',
-                    teaser: 'Separate living room, dining area, and VIP amenities.',
+                    teaser: 'Separate living salon, dedicated dining area, and VIP amenities.',
                     min_price_cents: 6000000,
                     featured_media: { url: '/hotel/atrium-ceiling-light.webp', alt_text: 'Executive Suite' },
                   },
@@ -738,7 +738,7 @@ export function HomePage() {
                     id: 'pres',
                     name: 'Presidential / Royal Suite',
                     slug: 'presidential-suite',
-                    teaser: 'The pinnacle of northern hospitality with master bedroom and balcony.',
+                    teaser: 'The pinnacle of northern hospitality with master bedroom, private lounge and terrace.',
                     min_price_cents: 12000000,
                     featured_media: { url: '/hotel/corridor-art-gallery.webp', alt_text: 'Presidential Suite' },
                   },
@@ -782,7 +782,80 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 4. Find Us / Location in Zaria */}
+      {/* 4. Real Hotel Gallery Showcase Section */}
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 border-b border-sand-200">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
+          <div>
+            <span className="text-xs uppercase tracking-[0.2em] font-semibold text-amber-800">EXPERIENCE MAI CHITTA</span>
+            <h2 className="font-serif text-3xl sm:text-4xl font-normal text-slate-900 mt-2">
+              Architecture & Spaces
+            </h2>
+          </div>
+          <Link to="/gallery" className="text-sm font-medium text-amber-800 hover:text-amber-900 underline underline-offset-4">
+            View full gallery →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="group relative overflow-hidden rounded-2xl bg-sand-200 aspect-[4/5] shadow-sm">
+            <img
+              src="/hotel/lobby-cultural-mural.webp"
+              alt="Cultural Heritage Mural"
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-80" />
+            <div className="absolute bottom-4 left-4 right-4 text-white">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-300">Culture</span>
+              <p className="font-serif text-sm sm:text-base font-semibold mt-0.5">Heritage Art Mural</p>
+            </div>
+          </div>
+
+          <div className="group relative overflow-hidden rounded-2xl bg-sand-200 aspect-[4/5] shadow-sm">
+            <img
+              src="/hotel/staircase-marble-balustrades.webp"
+              alt="Marble Staircase & Balustrades"
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-80" />
+            <div className="absolute bottom-4 left-4 right-4 text-white">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-300">Interior</span>
+              <p className="font-serif text-sm sm:text-base font-semibold mt-0.5">Polished Marble Foyer</p>
+            </div>
+          </div>
+
+          <div className="group relative overflow-hidden rounded-2xl bg-sand-200 aspect-[4/5] shadow-sm">
+            <img
+              src="/hotel/reception-hallway-planters.webp"
+              alt="Reception Hallway"
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-80" />
+            <div className="absolute bottom-4 left-4 right-4 text-white">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-300">Hospitality</span>
+              <p className="font-serif text-sm sm:text-base font-semibold mt-0.5">Reception Hallway</p>
+            </div>
+          </div>
+
+          <div className="group relative overflow-hidden rounded-2xl bg-sand-200 aspect-[4/5] shadow-sm">
+            <img
+              src="/hotel/lobby-monstera-planters.webp"
+              alt="Lobby Lounge"
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-80" />
+            <div className="absolute bottom-4 left-4 right-4 text-white">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-300">Relaxation</span>
+              <p className="font-serif text-sm sm:text-base font-semibold mt-0.5">Lobby Planters Lounge</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Find Us / Location in Zaria */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="mb-8">
           <span className="text-xs uppercase tracking-[0.2em] font-semibold text-amber-800">FIND US</span>
