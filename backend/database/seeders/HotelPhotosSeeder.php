@@ -11,31 +11,31 @@ class HotelPhotosSeeder extends Seeder
     {
         $photos = [
             [
-                'path' => 'hotel/lobby-cultural-mural.jpg',
+                'path' => 'hotel/lobby-cultural-mural.webp',
                 'title' => 'Cultural Heritage Mural',
                 'alt' => 'Staircase wall mural honoring northern Nigerian culture',
                 'cat' => 'general',
             ],
             [
-                'path' => 'hotel/lobby-monstera-planters.jpg',
+                'path' => 'hotel/lobby-monstera-planters.webp',
                 'title' => 'Lobby & Indoor Planters',
                 'alt' => 'Polished marble lobby with monstera planters and reception hallway',
                 'cat' => 'general',
             ],
             [
-                'path' => 'hotel/reception-hallway-planters.jpg',
+                'path' => 'hotel/reception-hallway-planters.webp',
                 'title' => 'Reception Hallway',
                 'alt' => 'Hallway with dark wood paneling, marble flooring and planters',
                 'cat' => 'general',
             ],
             [
-                'path' => 'hotel/atrium-ceiling-light.jpg',
+                'path' => 'hotel/atrium-ceiling-light.webp',
                 'title' => 'Atrium & Halo Chandelier',
                 'alt' => 'Atrium ceiling with circular pendant chandelier and modern balustrades',
                 'cat' => 'exterior',
             ],
             [
-                'path' => 'hotel/corridor-art-gallery.jpg',
+                'path' => 'hotel/corridor-art-gallery.webp',
                 'title' => 'Corridor Art Gallery',
                 'alt' => 'Upper corridor with wall art framing and warm ambient lighting',
                 'cat' => 'general',
@@ -51,8 +51,8 @@ class HotelPhotosSeeder extends Seeder
                 [
                     'original_name' => basename($p['path']),
                     'filename' => basename($p['path']),
-                    'mime_type' => 'image/jpeg',
-                    'extension' => 'jpg',
+                    'mime_type' => 'image/webp',
+                    'extension' => 'webp',
                     'size_bytes' => $size,
                     'width' => 1200,
                     'height' => 1600,
