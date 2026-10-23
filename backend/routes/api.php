@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Api\V1\Admin\AccountingController;
 use App\Http\Controllers\Api\V1\Admin\AuditLogController;
+use App\Http\Controllers\Api\V1\Admin\ContactInquiryController;
 use App\Http\Controllers\Api\V1\Admin\FolioController;
 use App\Http\Controllers\Api\V1\Admin\HousekeepingController;
+use App\Http\Controllers\Api\V1\Admin\HumanResourcesController;
 use App\Http\Controllers\Api\V1\Admin\InventoryController;
 use App\Http\Controllers\Api\V1\Admin\MaintenanceController;
 use App\Http\Controllers\Api\V1\Admin\MediaController;
@@ -68,6 +70,15 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::get('dashboard', [SettingsController::class, 'dashboard']);
 
         Route::prefix('admin')->group(function () {
+            Route::get('contact-inquiries', [ContactInquiryController::class, 'index']);
+            Route::put('contact-inquiries/{contactInquiry}', [ContactInquiryController::class, 'update']);
+            Route::get('employees', [HumanResourcesController::class, 'index']);
+            Route::post('employees', [HumanResourcesController::class, 'store']);
+            Route::put('employees/{employee}', [HumanResourcesController::class, 'update']);
+            Route::get('payroll', [HumanResourcesController::class, 'payroll']);
+            Route::get('payroll/export', [HumanResourcesController::class, 'exportPayroll']);
+            Route::post('payroll', [HumanResourcesController::class, 'preparePayroll']);
+            Route::post('payroll/{payrollEntry}/review', [HumanResourcesController::class, 'reviewPayroll']);
             // System administration
             Route::apiResource('users', UserController::class)->except('destroy');
             Route::get('permissions', [RoleController::class, 'permissions']);

@@ -31,7 +31,7 @@ class PublicWebsiteController extends Controller
     public function bootstrap(): JsonResponse
     {
         $ver = CmsService::cacheVersion();
-        $payload = Cache::remember("cms.public.bootstrap.v{$ver}", 600, function () {
+        $payload = Cache::remember("cms.public.bootstrap.arrays.v{$ver}", 600, function () {
             $publicSettings = $this->settings->all(publicOnly: true);
             $menus = NavigationMenu::with(['items' => fn ($q) => $q->where('is_visible', true)->orderBy('sort_order')])
                 ->get()
@@ -50,32 +50,32 @@ class PublicWebsiteController extends Controller
                 'settings' => $publicSettings,
                 'hero_media' => $heroMedia ? $heroMedia->toArray() : null,
                 'menus' => [
-                    'header' => array_values(is_array($menus['header'] ?? null) ? $menus['header'] : ($menus['header']?->all() ?? [])),
-                    'footer' => array_values(is_array($menus['footer'] ?? null) ? $menus['footer'] : ($menus['footer']?->all() ?? [])),
+                    'header' => $menus->get('header')?->values()->all() ?? [],
+                    'footer' => $menus->get('footer')?->values()->all() ?? [],
                 ],
                 'featured_rooms' => RoomContent::published()
                     ->with('featuredMedia')
                     ->orderByDesc('is_featured')
                     ->orderBy('sort_order')
                     ->limit(6)
-                    ->get(),
+                    ->get()->toArray(),
                 'featured_offers' => Offer::published()
                     ->with('featuredMedia')
                     ->orderByDesc('is_featured')
                     ->orderBy('sort_order')
                     ->limit(4)
-                    ->get(),
+                    ->get()->toArray(),
                 'gallery_preview' => MediaAsset::where('is_public', true)
                     ->where('in_gallery', true)
                     ->orderBy('sort_order')
                     ->orderByDesc('id')
                     ->limit(6)
-                    ->get(),
+                    ->get()->toArray(),
                 'testimonials' => Testimonial::published()
                     ->orderByDesc('is_featured')
                     ->orderBy('sort_order')
                     ->limit(6)
-                    ->get(),
+                    ->get()->toArray(),
             ];
         });
 

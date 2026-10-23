@@ -7,14 +7,12 @@ use App\Models\GoodsReceiving;
 use App\Models\GuestFolio;
 use App\Models\InventoryCategory;
 use App\Models\InventoryItem;
-use App\Models\InventoryStockBalance;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\MenuItemRecipe;
 use App\Models\PaymentTransaction;
 use App\Models\PosOrder;
 use App\Models\PosOutlet;
-use App\Models\PosPayment;
 use App\Models\PurchaseOrder;
 use App\Models\RatePlan;
 use App\Models\RatePlanRoomType;
@@ -60,23 +58,38 @@ class Phase5MariaDbConcurrencyTest extends TestCase
     private static bool $migrated = false;
 
     private StorageLocation $mainStore;
+
     private PosOutlet $restaurantOutlet;
+
     private MenuCategory $mainsCat;
+
     private InventoryCategory $foodCat;
+
     private RoomType $deluxeType;
+
     private Room $room101;
+
     private RatePlan $standardPlan;
 
     private User $manager;
+
     private User $posStaff;
+
     private User $posSupervisor;
+
     private User $storekeeper;
+
     private User $procurementOfficer;
+
     private User $frontDesk;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        if (env('RUN_MARIADB_CONCURRENCY_TESTS') !== '1') {
+            $this->markTestSkipped('Set RUN_MARIADB_CONCURRENCY_TESTS=1 to run the MariaDB concurrency suite.');
+        }
 
         Config::set('database.default', 'mysql');
         Config::set('database.connections.mysql.host', '127.0.0.1');

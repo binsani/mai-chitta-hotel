@@ -19,6 +19,7 @@ import { Alert, Badge, Button, Card, EmptyState, ErrorState, FormField, Input, M
 import { useAuth } from '@/auth/AuthProvider'
 
 const BootstrapCtx = createContext<PublicBootstrap | null>(null)
+const COPYRIGHT_YEAR = new Date().getFullYear()
 function usePublicBootstrap() {
   return useContext(BootstrapCtx)
 }
@@ -253,7 +254,7 @@ export function PublicLayout() {
           </div>
 
           <div className="border-t border-slate-800/80 px-4 py-6 text-center text-xs text-slate-500">
-            © {new Date().getFullYear()} {hotel.name} (Zaria, Kaduna State, Nigeria). All rights reserved.
+            © {COPYRIGHT_YEAR} {hotel.name} (Zaria, Kaduna State, Nigeria). All rights reserved.
           </div>
         </footer>
       </div>
@@ -531,6 +532,7 @@ export function HomePage() {
   const [checkOut, setCheckOut] = useState('')
   const [adults, setAdults] = useState('1')
   const [roomType, setRoomType] = useState('all')
+  const bookableTypes = useQuery({ queryKey: ['public', 'room-types'], queryFn: async () => (await api.get<{ data: { id: number; name: string }[] }>('/public/room-types')).data.data })
 
   if (q.isLoading) return <Spinner />
   const page = q.data
@@ -574,6 +576,7 @@ export function HomePage() {
                 if (checkIn) params.set('check_in', checkIn)
                 if (checkOut) params.set('check_out', checkOut)
                 if (adults) params.set('adults', adults)
+                if (roomType !== 'all') params.set('room_type_id', roomType)
                 window.location.href = `/booking?${params.toString()}`
               }}
               className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 text-left"
@@ -582,6 +585,8 @@ export function HomePage() {
                 <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Check-in</label>
                 <input
                   type="date"
+                  aria-label="Check-in"
+                  required
                   value={checkIn}
                   onChange={(e) => setCheckIn(e.target.value)}
                   className="w-full bg-transparent text-sm font-medium text-slate-900 focus:outline-none"
@@ -592,6 +597,9 @@ export function HomePage() {
                 <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Check-out</label>
                 <input
                   type="date"
+                  aria-label="Check-out"
+                  required
+                  min={checkIn || undefined}
                   value={checkOut}
                   onChange={(e) => setCheckOut(e.target.value)}
                   className="w-full bg-transparent text-sm font-medium text-slate-900 focus:outline-none"
@@ -601,6 +609,7 @@ export function HomePage() {
               <div className="rounded-xl border border-slate-200/90 bg-white px-3 py-2">
                 <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Guests</label>
                 <select
+                  aria-label="Guests"
                   value={adults}
                   onChange={(e) => setAdults(e.target.value)}
                   className="w-full bg-transparent text-sm font-medium text-slate-900 focus:outline-none"
@@ -615,15 +624,13 @@ export function HomePage() {
               <div className="rounded-xl border border-slate-200/90 bg-white px-3 py-2">
                 <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Room Type</label>
                 <select
+                  aria-label="Room type"
                   value={roomType}
                   onChange={(e) => setRoomType(e.target.value)}
                   className="w-full bg-transparent text-sm font-medium text-slate-900 focus:outline-none"
                 >
                   <option value="all">Any Available Room</option>
-                  <option value="standard">Standard Room</option>
-                  <option value="deluxe">Deluxe Room</option>
-                  <option value="suite">Executive Suite</option>
-                  <option value="presidential">Presidential Suite</option>
+                  {bookableTypes.data?.map(type => <option key={type.id} value={type.id}>{type.name}</option>)}
                 </select>
               </div>
 
@@ -705,45 +712,10 @@ export function HomePage() {
             </Link>
           </div>
 
-          {/* Render Rooms Grid (Fallback or Real DB items) */}
+          {!boot?.featured_rooms.length && <Card className="mb-6 p-6"><p className="text-slate-600">Contact our team for room options and current rates.</p><Button asChild variant="secondary" className="mt-3"><Link to="/contact">Contact reservations</Link></Button></Card>}
+          {/* Published room content and configured indicative rates */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {(boot?.featured_rooms && boot.featured_rooms.length > 0
-              ? boot.featured_rooms.slice(0, 4)
-              : [
-                  {
-                    id: 'std',
-                    name: 'Standard Room',
-                    slug: 'standard-room',
-                    teaser: 'Serene guestroom with king bed, executive work desk and ensuite bath.',
-                    min_price_cents: 2500000,
-                    featured_media: { url: '/hotel/PXL_20261019_193436703.webp', alt_text: 'Standard Room' },
-                  },
-                  {
-                    id: 'dlx',
-                    name: 'Deluxe Room',
-                    slug: 'deluxe-room',
-                    teaser: 'Spacious sanctuary featuring lounge seating, warm ambient light, and city views.',
-                    min_price_cents: 3500000,
-                    featured_media: { url: '/hotel/PXL_20261019_193614111.webp', alt_text: 'Deluxe Room' },
-                  },
-                  {
-                    id: 'exec',
-                    name: 'Executive Suite',
-                    slug: 'executive-suite',
-                    teaser: 'Separate living salon, dedicated dining area, and VIP amenities.',
-                    min_price_cents: 6000000,
-                    featured_media: { url: '/hotel/atrium-ceiling-light.webp', alt_text: 'Executive Suite' },
-                  },
-                  {
-                    id: 'pres',
-                    name: 'Presidential / Royal Suite',
-                    slug: 'presidential-suite',
-                    teaser: 'The pinnacle of northern hospitality with master bedroom, private lounge and terrace.',
-                    min_price_cents: 12000000,
-                    featured_media: { url: '/hotel/corridor-art-gallery.webp', alt_text: 'Presidential Suite' },
-                  },
-                ]
-            ).map((room: any) => (
+            {(boot?.featured_rooms ?? []).slice(0, 4).map((room) => (
               <div
                 key={room.id}
                 className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-sand-300/80 transition-all hover:shadow-lg hover:ring-amber-400/80"
@@ -751,7 +723,7 @@ export function HomePage() {
                 <div className="relative aspect-[4/3] overflow-hidden bg-sand-200">
                   <img
                     src={room.featured_media?.url || '/hotel/lobby-monstera-planters.webp'}
-                    alt={room.featured_media?.alt_text || room.name}
+                    alt={room.featured_media?.alt_text || room.title}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                   />
@@ -759,14 +731,14 @@ export function HomePage() {
                 </div>
                 <div className="flex flex-1 flex-col p-5">
                   <h3 className="font-serif text-lg font-semibold text-slate-900 group-hover:text-amber-800 transition-colors">
-                    {room.name}
+                    {room.title}
                   </h3>
                   <p className="mt-1 flex-1 text-xs text-slate-600 line-clamp-2">
-                    {room.teaser || room.summary}
+                    {room.summary}
                   </p>
                   <div className="mt-4 flex items-center justify-between border-t border-sand-100 pt-3">
                     <span className="text-xs text-slate-500">
-                      From <span className="font-bold text-amber-800">{formatCurrency(room.min_price_cents ?? 2500000, hotel?.currency ?? 'NGN')}</span> / night
+                      {room.indicative_rate !== null ? <>From <span className="font-bold text-amber-800">{formatCurrency(room.indicative_rate, hotel?.currency ?? 'NGN')}</span> / night</> : 'Contact us for rates'}
                     </span>
                     <Link
                       to={`/rooms/${room.slug}`}
@@ -1080,6 +1052,9 @@ export function BookingPage() {
       params: { check_in_date: checkIn, check_out_date: checkOut, adults, children, rooms_count: roomsCount },
     })).data.data,
   })
+
+  const preferredRoomType = searchParams.get('room_type_id')
+  const availabilityOptions = (availQuery.data?.options ?? []).filter(option => !preferredRoomType || String(option.room_type.id) === preferredRoomType)
 
   const createHoldMut = useMutation({
     mutationFn: async (quote: BookingQuote) => {
@@ -1399,6 +1374,7 @@ export function BookingPage() {
                   adults: String(adults),
                   children: String(children),
                   rooms: String(roomsCount),
+                  ...(preferredRoomType ? { room_type_id: preferredRoomType } : {}),
                 })
                 setSearchSubmitted(true)
                 availQuery.refetch()
@@ -1427,6 +1403,8 @@ export function BookingPage() {
 
           {bookingErr && <Alert variant="error">{bookingErr}</Alert>}
 
+          {preferredRoomType && <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600"><span>Showing your selected room type.</span><Button variant="secondary" size="sm" onClick={() => { const next = new URLSearchParams(searchParams); next.delete('room_type_id'); setSearchParams(next) }}>Show all room types</Button></div>}
+
           {!booking?.online_booking_enabled && (
             <Alert variant="info" title="Online Booking Notice">
               Online instant booking is currently in setup mode or managed by the reservation desk. If room inventory and rate plans have been configured by hotel administration, you may preview quotes below or contact reception directly.
@@ -1437,9 +1415,9 @@ export function BookingPage() {
             <Spinner label="Checking room availability and calculating exact quotes…" />
           ) : availQuery.isError ? (
             <ErrorState message={errorMessage(availQuery.error)} onRetry={() => availQuery.refetch()} />
-          ) : availQuery.data && availQuery.data.options.length > 0 ? (
+          ) : availQuery.data && availabilityOptions.length > 0 ? (
             <div className="space-y-6">
-              {availQuery.data.options.map((opt) => (
+              {availabilityOptions.map((opt) => (
                 <Card key={opt.room_type.id} className="overflow-hidden">
                   <div className="grid gap-6 p-6 lg:grid-cols-3">
                     <div>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import { Plus, Search } from 'lucide-react'
 import { useAuth, type Role, type User } from '@/auth/AuthProvider'
@@ -31,6 +31,7 @@ function UserFormModal({ user, open, onClose }: { user: User | null; open: boole
   const form = useForm<UserForm>({ resolver: zodResolver(userSchema) })
   useEffect(() => {
     if (open) {
+      // oxlint-disable-next-line react/set-state-in-effect -- Resetting a modal form when its record changes is intentional synchronization.
       setError(null)
       form.reset({ name: user?.name ?? '', email: user?.email ?? '', phone: user?.phone ?? '', password: '', is_active: user?.is_active ?? true, role_ids: user?.roles?.map((r) => r.id) ?? [] })
     }
@@ -50,7 +51,7 @@ function UserFormModal({ user, open, onClose }: { user: User | null; open: boole
       Object.entries(fieldErrors(e)).forEach(([k, m]) => form.setError(k as keyof UserForm, { message: m }))
     },
   })
-  const selected = form.watch('role_ids') ?? []
+  const selected = useWatch({ control: form.control, name: 'role_ids' }) ?? []
   const toggle = (id: number) => form.setValue('role_ids', selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id])
   const e = form.formState.errors
 
@@ -146,20 +147,23 @@ export function RolesPage() {
   const roles = useRoles()
   const perms = useQuery({ queryKey: ['permissions'], queryFn: async () => (await api.get<{ data: PermissionMap }>('/admin/permissions')).data.data })
   const [selectedId, setSelectedId] = useState<number | null>(null)
-  const [draft, setDraft] = useState<string[]>([])
+  const [draft, setDraft] = useState<string[] | null>(null)
   const [msg, setMsg] = useState<{ t: 'success' | 'error'; m: string } | null>(null)
   const [creating, setCreating] = useState(false)
   const selected = useMemo(() => roles.data?.find((r) => r.id === selectedId) ?? roles.data?.[0], [roles.data, selectedId])
-  useEffect(() => { if (selected) { setDraft(selected.permissions); setMsg(null) } }, [selected])
-
   const editable = can('roles.manage') && selected?.slug !== 'super-admin'
-  const dirty = selected && (draft.length !== selected.permissions.length || draft.some((p) => !selected.permissions.includes(p)))
+  const permissions = draft ?? selected?.permissions ?? []
+  const dirty = selected && (permissions.length !== selected.permissions.length || permissions.some((p) => !selected.permissions.includes(p)))
   const save = useMutation({
-    mutationFn: async () => api.put(`/admin/roles/${selected!.id}`, { permissions: draft }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['roles'] }); qc.invalidateQueries({ queryKey: ['auth', 'user'] }); setMsg({ t: 'success', m: 'Permissions saved.' }) },
+    mutationFn: async () => api.put(`/admin/roles/${selected!.id}`, { permissions }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['roles'] }); qc.invalidateQueries({ queryKey: ['auth', 'user'] }); setDraft(null); setMsg({ t: 'success', m: 'Permissions saved.' }) },
     onError: (e) => setMsg({ t: 'error', m: errorMessage(e) }),
   })
-  const toggle = (slug: string) => setDraft((d) => d.includes(slug) ? d.filter((x) => x !== slug) : [...d, slug])
+  const selectRole = (id: number) => { setSelectedId(id); setDraft(null); setMsg(null) }
+  const toggle = (slug: string) => setDraft((current) => {
+    const next = current ?? selected?.permissions ?? []
+    return next.includes(slug) ? next.filter((p) => p !== slug) : [...next, slug]
+  })
 
   if (roles.isLoading || perms.isLoading) return <Spinner />
   if (roles.isError || perms.isError) return <ErrorState message={errorMessage(roles.error ?? perms.error)} onRetry={() => { roles.refetch(); perms.refetch() }} />
@@ -172,7 +176,7 @@ export function RolesPage() {
           <ul className="divide-y divide-slate-100">
             {roles.data?.map((r) => (
               <li key={r.id}>
-                <button onClick={() => setSelectedId(r.id)} className={`w-full px-4 py-3 text-left text-sm hover:bg-slate-50 ${selected?.id === r.id ? 'bg-brand-50' : ''}`} aria-current={selected?.id === r.id}>
+                <button onClick={() => selectRole(r.id)} className={`w-full px-4 py-3 text-left text-sm hover:bg-slate-50 ${selected?.id === r.id ? 'bg-brand-50' : ''}`} aria-current={selected?.id === r.id}>
                   <span className="block font-medium text-slate-800">{r.name}</span>
                   <span className="text-xs text-slate-500">{r.permissions.length} permissions · {r.users_count ?? 0} users</span>
                 </button>
@@ -193,7 +197,7 @@ export function RolesPage() {
                     <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{module}</legend>
                     {list.map((p) => (
                       <label key={p.slug} className="flex items-center gap-2 py-0.5 text-sm text-slate-700">
-                        <input type="checkbox" disabled={!editable} checked={draft.includes(p.slug)} onChange={() => toggle(p.slug)} /> {p.name}
+                        <input type="checkbox" disabled={!editable} checked={permissions.includes(p.slug)} onChange={() => toggle(p.slug)} /> {p.name}
                       </label>
                     ))}
                   </fieldset>

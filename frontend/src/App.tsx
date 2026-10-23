@@ -1,34 +1,78 @@
-import type { ReactElement } from 'react'
+import { lazy, Suspense, type ComponentType, type ReactElement } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
 import { AdminLayout, RequireAuth } from '@/layouts/AdminLayout'
 import { allNavItems } from '@/lib/navigation'
-import { ForgotPasswordPage, LoginPage, ResetPasswordPage } from '@/pages/auth'
-import { AccessDeniedPage, ComingSoonPage, DashboardPage, NotFoundPage, ProfilePage } from '@/pages/general'
-import { AuditLogsPage, RolesPage, SettingsPage, UsersPage } from '@/pages/admin'
-import {
-  CmsMediaPage, CmsMenusPage, CmsOffersPage, CmsPagesPage,
-  CmsRoomsPage, CmsTestimonialsPage, CmsWebsiteSettingsPage,
-} from '@/pages/cms'
-import {
-  AvailabilityAdminPage, FrontDeskAdminPage, GuestsAdminPage, PaymentsAdminPage,
-  RatePlansAdminPage, ReservationSettingsAdminPage, ReservationsAdminPage,
-  RoomsAdminPage, RoomTypesAdminPage,
-} from '@/pages/reservations'
-import {
-  FoliosAdminPage, HousekeepingAdminPage, MaintenanceAdminPage,
-} from '@/pages/operations'
-import {
-  InventoryAdminPage, PosAdminPage, ProcurementAdminPage,
-} from '@/pages/pos_inventory'
-import {
-  AnalyticsAdminPage, FinanceAdminPage, NightAuditAdminPage,
-} from '@/pages/accounting_analytics'
-import {
-  AboutPage, BookingPage, CancellationPolicyPage, CmsGenericPage, ContactPage,
-  EventsPage, FacilitiesPage, GalleryPage, HomePage, OfferDetailPage, OffersPage,
-  PrivacyPolicyPage, PublicLayout, RestaurantPage, RoomDetailPage, RoomsPage, TermsPage,
-} from '@/pages/public'
+
+function lazyPage(loader: () => Promise<object>, page: string) {
+  return lazy(async () => ({ default: (await loader() as Record<string, unknown>)[page] as ComponentType<any> }))
+}
+
+const auth = () => import('@/pages/auth')
+const general = () => import('@/pages/general')
+const cms = () => import('@/pages/cms')
+const reservations = () => import('@/pages/reservations')
+const operations = () => import('@/pages/operations')
+const posInventory = () => import('@/pages/pos_inventory')
+const accountingAnalytics = () => import('@/pages/accounting_analytics')
+const publicPages = () => import('@/pages/public')
+const ContactInboxPage = lazyPage(() => import('@/pages/staff'), 'ContactInboxPage')
+const HumanResourcesPage = lazyPage(() => import('@/pages/staff'), 'HumanResourcesPage')
+
+const ForgotPasswordPage = lazyPage(auth, 'ForgotPasswordPage')
+const LoginPage = lazyPage(auth, 'LoginPage')
+const ResetPasswordPage = lazyPage(auth, 'ResetPasswordPage')
+const AccessDeniedPage = lazyPage(general, 'AccessDeniedPage')
+const ComingSoonPage = lazyPage(general, 'ComingSoonPage')
+const DashboardPage = lazyPage(general, 'DashboardPage')
+const NotFoundPage = lazyPage(general, 'NotFoundPage')
+const ProfilePage = lazyPage(general, 'ProfilePage')
+const AuditLogsPage = lazyPage(() => import('@/pages/admin'), 'AuditLogsPage')
+const RolesPage = lazyPage(() => import('@/pages/admin'), 'RolesPage')
+const SettingsPage = lazyPage(() => import('@/pages/admin'), 'SettingsPage')
+const UsersPage = lazyPage(() => import('@/pages/admin'), 'UsersPage')
+const CmsMediaPage = lazyPage(cms, 'CmsMediaPage')
+const CmsMenusPage = lazyPage(cms, 'CmsMenusPage')
+const CmsOffersPage = lazyPage(cms, 'CmsOffersPage')
+const CmsPagesPage = lazyPage(cms, 'CmsPagesPage')
+const CmsRoomsPage = lazyPage(cms, 'CmsRoomsPage')
+const CmsTestimonialsPage = lazyPage(cms, 'CmsTestimonialsPage')
+const CmsWebsiteSettingsPage = lazyPage(cms, 'CmsWebsiteSettingsPage')
+const AvailabilityAdminPage = lazyPage(reservations, 'AvailabilityAdminPage')
+const FrontDeskAdminPage = lazyPage(reservations, 'FrontDeskAdminPage')
+const GuestsAdminPage = lazyPage(reservations, 'GuestsAdminPage')
+const PaymentsAdminPage = lazyPage(reservations, 'PaymentsAdminPage')
+const RatePlansAdminPage = lazyPage(reservations, 'RatePlansAdminPage')
+const ReservationSettingsAdminPage = lazyPage(reservations, 'ReservationSettingsAdminPage')
+const ReservationsAdminPage = lazyPage(reservations, 'ReservationsAdminPage')
+const RoomsAdminPage = lazyPage(reservations, 'RoomsAdminPage')
+const RoomTypesAdminPage = lazyPage(reservations, 'RoomTypesAdminPage')
+const FoliosAdminPage = lazyPage(operations, 'FoliosAdminPage')
+const HousekeepingAdminPage = lazyPage(operations, 'HousekeepingAdminPage')
+const MaintenanceAdminPage = lazyPage(operations, 'MaintenanceAdminPage')
+const InventoryAdminPage = lazyPage(posInventory, 'InventoryAdminPage')
+const PosAdminPage = lazyPage(posInventory, 'PosAdminPage')
+const ProcurementAdminPage = lazyPage(posInventory, 'ProcurementAdminPage')
+const AnalyticsAdminPage = lazyPage(accountingAnalytics, 'AnalyticsAdminPage')
+const FinanceAdminPage = lazyPage(accountingAnalytics, 'FinanceAdminPage')
+const NightAuditAdminPage = lazyPage(accountingAnalytics, 'NightAuditAdminPage')
+const AboutPage = lazyPage(publicPages, 'AboutPage')
+const BookingPage = lazyPage(publicPages, 'BookingPage')
+const CancellationPolicyPage = lazyPage(publicPages, 'CancellationPolicyPage')
+const CmsGenericPage = lazyPage(publicPages, 'CmsGenericPage')
+const ContactPage = lazyPage(publicPages, 'ContactPage')
+const EventsPage = lazyPage(publicPages, 'EventsPage')
+const FacilitiesPage = lazyPage(publicPages, 'FacilitiesPage')
+const GalleryPage = lazyPage(publicPages, 'GalleryPage')
+const HomePage = lazyPage(publicPages, 'HomePage')
+const OfferDetailPage = lazyPage(publicPages, 'OfferDetailPage')
+const OffersPage = lazyPage(publicPages, 'OffersPage')
+const PrivacyPolicyPage = lazyPage(publicPages, 'PrivacyPolicyPage')
+const PublicLayout = lazyPage(publicPages, 'PublicLayout')
+const RestaurantPage = lazyPage(publicPages, 'RestaurantPage')
+const RoomDetailPage = lazyPage(publicPages, 'RoomDetailPage')
+const RoomsPage = lazyPage(publicPages, 'RoomsPage')
+const TermsPage = lazyPage(publicPages, 'TermsPage')
 
 /** UI-level guard for UX only. The API enforces the same permissions server-side. */
 function Can({ permissions, children }: { permissions: string[]; children: ReactElement }) {
@@ -38,6 +82,8 @@ function Can({ permissions, children }: { permissions: string[]; children: React
 
 const implementedAdmin: Record<string, ReactElement> = {
   '/admin': <DashboardPage />,
+  '/admin/hr': <HumanResourcesPage />,
+  '/admin/website/inquiries': <ContactInboxPage />,
   '/admin/website/pages': <CmsPagesPage />,
   '/admin/website/media': <CmsMediaPage />,
   '/admin/website/navigation': <CmsMenusPage />,
@@ -72,6 +118,7 @@ const implementedAdmin: Record<string, ReactElement> = {
 export default function App() {
   return (
     <BrowserRouter>
+      <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-sm text-slate-600">Loading…</div>}>
       <Routes>
         {/* Public Hotel Website */}
         <Route element={<PublicLayout />}>
@@ -119,8 +166,11 @@ export default function App() {
         </Route>
 
         {/* Public 404 */}
-        <Route path="*" element={<PublicLayout />} />
+        <Route element={<PublicLayout />}>
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
       </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }

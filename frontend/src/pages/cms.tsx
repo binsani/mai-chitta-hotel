@@ -255,6 +255,7 @@ function PageEditorModal({ pageId, open, onClose }: { pageId: number | null; ope
 
   useEffect(() => {
     if (creating) {
+      // oxlint-disable-next-line react/set-state-in-effect -- This synchronizes the editable draft with the selected page.
       setTitle(''); setSlug(''); setSubtitle(''); setExcerpt(''); setBody('')
       setTemplate('standard'); setStatus('draft'); setFeaturedMediaId(null)
       setSeoTitle(''); setSeoDesc(''); setCanonicalUrl(''); setOgImageId(null); setNoindex(false)
@@ -785,6 +786,7 @@ export function CmsMenusPage() {
   const currentMenu = q.data?.find((m) => m.slug === activeSlug)
   useEffect(() => {
     if (currentMenu) {
+      // oxlint-disable-next-line react/set-state-in-effect -- This synchronizes the editable draft with the selected menu.
       setItems(currentMenu.items)
       setMsg(null)
     }
@@ -1183,6 +1185,7 @@ export function CmsWebsiteSettingsPage() {
   const [msg, setMsg] = useState<{ t: 'success' | 'error'; m: string } | null>(null)
 
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- This initializes the editable settings draft after it is fetched.
     if (q.data) setWs(q.data.data.website)
   }, [q.data])
 

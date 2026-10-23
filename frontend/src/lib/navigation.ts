@@ -22,6 +22,7 @@ export const navigation: NavGroup[] = [
     label: 'Website Management',
     items: [
       { label: 'Pages', path: '/admin/website/pages', icon: FileText, permissions: ['website.view'], ready: true },
+      { label: 'Contact Inbox', path: '/admin/website/inquiries', icon: MessageSquareQuote, permissions: ['website.view'], ready: true },
       { label: 'Media', path: '/admin/website/media', icon: Image, permissions: ['media.view'], ready: true },
       { label: 'Navigation', path: '/admin/website/navigation', icon: Menu, permissions: ['website.view'], ready: true },
       { label: 'Room Content', path: '/admin/website/rooms', icon: BedDouble, permissions: ['website.view'], ready: true },
@@ -54,7 +55,7 @@ export const navigation: NavGroup[] = [
       { label: 'Restaurant / POS', path: '/admin/pos', icon: UtensilsCrossed, permissions: ['pos.view'], ready: true },
       { label: 'Finance & Accounting', path: '/admin/finance', icon: Landmark, permissions: ['finance.view', 'accounting.view'], ready: true },
       { label: 'Night Audit', path: '/admin/night-audit', icon: Moon, permissions: ['night_audit.view'], ready: true },
-      { label: 'Human Resources', path: '/admin/hr', icon: BriefcaseBusiness, permissions: ['hr.view', 'payroll.view'] },
+      { label: 'Human Resources', path: '/admin/hr', icon: BriefcaseBusiness, permissions: ['hr.view', 'payroll.view'], ready: true },
       { label: 'Maintenance', path: '/admin/maintenance', icon: Wrench, permissions: ['maintenance.view'], ready: true },
       { label: 'Analytics & Reports', path: '/admin/reports', icon: BarChart3, permissions: ['reports.view', 'analytics.view'], ready: true },
     ],

@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\FolioEntry;
 use App\Models\FolioPaymentAllocation;
 use App\Models\GuestFolio;
-use App\Models\HousekeepingTask;
 use App\Models\PaymentTransaction;
 use App\Models\RatePlan;
 use App\Models\RatePlanRoomType;
@@ -15,7 +14,6 @@ use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\Setting;
 use App\Models\User;
-use App\Services\FolioService;
 use App\Services\HousekeepingService;
 use App\Services\ReservationService;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -42,17 +40,28 @@ class Phase4MariaDbConcurrencyTest extends TestCase
     private static bool $migrated = false;
 
     private RoomType $deluxeType;
+
     private Room $room101;
+
     private Room $room102;
+
     private RatePlan $standardPlan;
+
     private User $manager;
+
     private User $accountant;
+
     private User $hk1;
+
     private User $hk2;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        if (env('RUN_MARIADB_CONCURRENCY_TESTS') !== '1') {
+            $this->markTestSkipped('Set RUN_MARIADB_CONCURRENCY_TESTS=1 to run the MariaDB concurrency suite.');
+        }
 
         Config::set('database.default', 'mysql');
         Config::set('database.connections.mysql.host', '127.0.0.1');

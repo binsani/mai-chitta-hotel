@@ -14,6 +14,7 @@ use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\ReservationService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
@@ -34,17 +35,28 @@ class Phase3MariaDbConcurrencyTest extends TestCase
     private static bool $migrated = false;
 
     private RoomType $deluxeType;
+
     private RoomType $suiteType;
+
     private Room $room101;
+
     private Room $room102;
+
     private Room $room201;
+
     private RatePlan $standardPlan;
+
     private User $manager;
+
     private User $accountant;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        if (env('RUN_MARIADB_CONCURRENCY_TESTS') !== '1') {
+            $this->markTestSkipped('Set RUN_MARIADB_CONCURRENCY_TESTS=1 to run the MariaDB concurrency suite.');
+        }
 
         // Point default connection to MariaDB/MySQL InnoDB `maichitta_test`
         Config::set('database.default', 'mysql');
@@ -434,7 +446,7 @@ class Phase3MariaDbConcurrencyTest extends TestCase
         $in = now()->addDays(11)->format('Y-m-d');
         $out = now()->addDays(13)->format('Y-m-d');
 
-        $resService = app(\App\Services\ReservationService::class);
+        $resService = app(ReservationService::class);
         $res1 = $resService->createReservation([
             'room_type_id' => $this->deluxeType->id,
             'rate_plan_id' => $this->standardPlan->id,
@@ -504,7 +516,7 @@ class Phase3MariaDbConcurrencyTest extends TestCase
         $in = now()->addDays(14)->format('Y-m-d');
         $out = now()->addDays(16)->format('Y-m-d');
 
-        $resService = app(\App\Services\ReservationService::class);
+        $resService = app(ReservationService::class);
         // Res A is in Deluxe; Res B is in Suite
         $resA = $resService->createReservation([
             'room_type_id' => $this->deluxeType->id,
@@ -564,7 +576,7 @@ class Phase3MariaDbConcurrencyTest extends TestCase
         $in = now()->addDays(17)->format('Y-m-d');
         $out = now()->addDays(19)->format('Y-m-d');
 
-        $resService = app(\App\Services\ReservationService::class);
+        $resService = app(ReservationService::class);
         $resService->createReservation([
             'room_type_id' => $this->deluxeType->id,
             'rate_plan_id' => $this->standardPlan->id,
@@ -625,7 +637,7 @@ class Phase3MariaDbConcurrencyTest extends TestCase
         $in = now()->addDays(20)->format('Y-m-d');
         $out = now()->addDays(22)->format('Y-m-d');
 
-        $resService = app(\App\Services\ReservationService::class);
+        $resService = app(ReservationService::class);
         $hold = $resService->createHold([
             'room_type_id' => $this->deluxeType->id,
             'rate_plan_id' => $this->standardPlan->id,
@@ -680,7 +692,7 @@ class Phase3MariaDbConcurrencyTest extends TestCase
         $in = now()->addDays(23)->format('Y-m-d');
         $out = now()->addDays(24)->format('Y-m-d');
 
-        $resService = app(\App\Services\ReservationService::class);
+        $resService = app(ReservationService::class);
         $res = $resService->createReservation([
             'room_type_id' => $this->deluxeType->id,
             'rate_plan_id' => $this->standardPlan->id,
