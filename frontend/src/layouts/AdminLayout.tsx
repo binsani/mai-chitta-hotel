@@ -78,7 +78,7 @@ export function AdminLayout() {
 
   const brand = (
     <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
-      <img src="/logo.jpg" alt="M&C Hotel Logo" className="h-9 w-9 rounded-md object-cover shadow-sm ring-1 ring-white/20" />
+      <img src="/logo.webp" alt="M&C Hotel Logo" className="h-9 w-9 rounded-md object-cover shadow-sm ring-1 ring-white/20" />
       <div className="leading-tight">
         <p className="font-semibold text-white">Mai Chitta Hotel</p>
         <p className="text-[11px] text-brand-200/80">Management System</p>

@@ -1,7 +1,6 @@
 import { lazy, Suspense, type ComponentType, type ReactElement } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
-import { AdminLayout, RequireAuth } from '@/layouts/AdminLayout'
 import { allNavItems } from '@/lib/navigation'
 
 function lazyPage(loader: () => Promise<object>, page: string) {
@@ -16,6 +15,8 @@ const operations = () => import('@/pages/operations')
 const posInventory = () => import('@/pages/pos_inventory')
 const accountingAnalytics = () => import('@/pages/accounting_analytics')
 const publicPages = () => import('@/pages/public')
+const AdminLayout = lazyPage(() => import('@/layouts/AdminLayout'), 'AdminLayout')
+const RequireAuth = lazyPage(() => import('@/layouts/AdminLayout'), 'RequireAuth')
 const ContactInboxPage = lazyPage(() => import('@/pages/staff'), 'ContactInboxPage')
 const HumanResourcesPage = lazyPage(() => import('@/pages/staff'), 'HumanResourcesPage')
 
@@ -57,10 +58,10 @@ const AnalyticsAdminPage = lazyPage(accountingAnalytics, 'AnalyticsAdminPage')
 const FinanceAdminPage = lazyPage(accountingAnalytics, 'FinanceAdminPage')
 const NightAuditAdminPage = lazyPage(accountingAnalytics, 'NightAuditAdminPage')
 const AboutPage = lazyPage(publicPages, 'AboutPage')
-const BookingPage = lazyPage(publicPages, 'BookingPage')
+const BookingPage = lazyPage(() => import('@/pages/booking'), 'BookingPage')
 const CancellationPolicyPage = lazyPage(publicPages, 'CancellationPolicyPage')
 const CmsGenericPage = lazyPage(publicPages, 'CmsGenericPage')
-const ContactPage = lazyPage(publicPages, 'ContactPage')
+const ContactPage = lazyPage(() => import('@/pages/contact'), 'ContactPage')
 const EventsPage = lazyPage(publicPages, 'EventsPage')
 const FacilitiesPage = lazyPage(publicPages, 'FacilitiesPage')
 const GalleryPage = lazyPage(publicPages, 'GalleryPage')

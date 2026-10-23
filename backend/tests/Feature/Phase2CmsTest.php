@@ -17,6 +17,17 @@ class Phase2CmsTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_cached_spa_metadata_refreshes_after_published_page_edits(): void
+    {
+        $page = Page::where('slug', 'about')->firstOrFail();
+        $this->actingAs($this->userWithRole('super-admin'));
+        $this->putJson('/api/v1/admin/pages/'.$page->id, ['seo_title' => 'Original Hotel Title'])->assertOk();
+        $this->get('/about')->assertOk()->assertSee('<title>Original Hotel Title</title>', false);
+        $this->get('/about')->assertOk()->assertSee('<title>Original Hotel Title</title>', false);
+        $this->putJson('/api/v1/admin/pages/'.$page->id, ['seo_title' => 'Updated Hotel Title'])->assertOk();
+        $this->get('/about')->assertOk()->assertSee('<title>Updated Hotel Title</title>', false)->assertHeader('Cache-Control', 'must-revalidate, no-cache, no-store, private');
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

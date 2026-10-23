@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Offer;
 use App\Models\Page;
 use App\Models\RoomContent;
+use App\Services\CmsService;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -28,10 +30,16 @@ class SpaController extends Controller
         abort_unless(is_file($shellPath), 503, 'Frontend build not found. Run "npm run build" in /frontend.');
 
         $html = (string) file_get_contents($shellPath);
-        $meta = $this->resolveMeta($request);
+        try {
+            $version = CmsService::cacheVersion();
+            $key = 'cms.spa.meta.v'.$version.'.'.hash('sha256', $request->root().'|'.$request->path());
+            $meta = Cache::remember($key, 300, fn () => $this->resolveMeta($request));
+        } catch (\Throwable) {
+            $meta = $this->resolveMeta($request);
+        }
 
         $tags = implode("\n    ", array_filter([
-            '<link rel="icon" type="image/jpeg" href="/favicon.jpg" />',
+            '<link rel="icon" type="image/webp" href="/logo.webp" />',
             '<link rel="apple-touch-icon" href="/logo.jpg" />',
             '<title>'.e($meta['title']).'</title>',
             '<meta name="description" content="'.e($meta['description']).'" />',
