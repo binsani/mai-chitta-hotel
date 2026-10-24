@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\LogSlowRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Sanctum SPA: session cookies + CSRF for requests from stateful (same-origin) domains.
         $middleware->statefulApi();
         $middleware->prepend(AssignRequestId::class);
+        $middleware->append(LogSlowRequests::class);
         $middleware->alias(['active' => EnsureUserIsActive::class]);
         // cPanel/Cloudflare proxies: trust forwarded headers so HTTPS and client IPs are correct.
         $middleware->trustProxies(at: env('TRUSTED_PROXIES', '127.0.0.1'));

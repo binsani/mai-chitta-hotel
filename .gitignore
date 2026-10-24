@@ -14,3 +14,6 @@
 .DS_Store
 Thumbs.db
 bulk_uploads/
+results.txt
+scripts/results.txt
+fail-verbose.txt

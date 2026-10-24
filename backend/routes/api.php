@@ -28,7 +28,88 @@ use App\Http\Controllers\Api\V1\Admin\WebsiteSettingsController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\PublicBookingController;
 use App\Http\Controllers\Api\V1\PublicWebsiteController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
+
+// Diagnostic health check routes (unthrottled, outside throttle:api)
+Route::prefix('v1')->group(function () {
+    // Minimal health check (no DB, no cache, outside throttle)
+    Route::get('health', function (Request $request) {
+        return response()->json([
+            'status'    => 'ok',
+            'time'      => now()->toIso8601String(),
+            'app_env'   => app()->environment(),
+            'client_ip' => $request->ip(),
+        ]);
+    });
+
+    // Deep diagnostic check (requires X-Health-Key header matching config; rate limited to 10 req/min)
+    Route::get('health/deep', function (Request $request) {
+        $secret = config('observability.health_secret');
+        if (empty($secret)) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $headerKey = $request->header('X-Health-Key');
+        if (! $headerKey || ! hash_equals((string) $secret, (string) $headerKey)) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $start = microtime(true);
+        $dbStatus = 'ok';
+        $dbLatencyMs = null;
+
+        try {
+            $dbStart = microtime(true);
+            DB::connection()->getPdo();
+            $dbLatencyMs = round((microtime(true) - $dbStart) * 1000, 2);
+        } catch (\Throwable $e) {
+            $dbStatus = 'error';
+            Log::error('Deep health check: database connection failed', [
+                'exception' => $e->getMessage(),
+            ]);
+        }
+
+        $cacheStatus = 'ok';
+        try {
+            $cacheKey = 'health_check_'.Str::random(6);
+            Cache::put($cacheKey, 1, 5);
+            $cacheVal = Cache::get($cacheKey);
+            Cache::forget($cacheKey);
+            if ($cacheVal !== 1) {
+                $cacheStatus = 'error';
+                Log::error('Deep health check: cache verification mismatch');
+            }
+        } catch (\Throwable $e) {
+            $cacheStatus = 'error';
+            Log::error('Deep health check: cache check failed', [
+                'exception' => $e->getMessage(),
+            ]);
+        }
+
+        $isHealthy = $dbStatus === 'ok' && $cacheStatus === 'ok';
+
+        return response()->json([
+            'status'      => $isHealthy ? 'healthy' : 'degraded',
+            'time'        => now()->toIso8601String(),
+            'app_env'     => app()->environment(),
+            'checks'      => [
+                'database' => [
+                    'status'     => $dbStatus,
+                    'latency_ms' => $dbLatencyMs,
+                ],
+                'cache' => [
+                    'status' => $cacheStatus,
+                ],
+            ],
+            'duration_ms' => round((microtime(true) - $start) * 1000, 2),
+        ], $isHealthy ? 200 : 503);
+    })->middleware('throttle:10,1');
+});
 
 Route::prefix('v1')->middleware('throttle:api')->group(function () {
     // Public Website & CMS read-only endpoints (published content only)
