@@ -888,9 +888,10 @@ export function HomePage() {
       </section>
 
       {/* 5. Rich Editorial Body / Additional CMS Sections if present */}
-      {page?.sections && page.sections.length > 0 && (
+      {(page?.body || (page?.sections && page.sections.length > 0)) && (
         <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8 space-y-12">
-          {page.sections.map((sec, idx) => (
+          {page.body && <Card className="p-6 sm:p-8"><SafeHtml html={page.body} /></Card>}
+          {page.sections?.map((sec, idx) => (
             <PageSectionRenderer key={sec.id ?? idx} section={sec} />
           ))}
         </div>

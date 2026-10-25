@@ -1,4 +1,6 @@
 User-agent: *
+# Public pages are available to search engines and AI search crawlers.
+Allow: /
 Disallow: /admin/
 Disallow: /api/
 Disallow: /sanctum/

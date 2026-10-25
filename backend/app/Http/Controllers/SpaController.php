@@ -6,6 +6,7 @@ use App\Models\Offer;
 use App\Models\Page;
 use App\Models\RoomContent;
 use App\Services\CmsService;
+use App\Services\PublicDiscoveryService;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -21,7 +22,7 @@ class SpaController extends Controller
 {
     public function __construct(private SettingsService $settings) {}
 
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, PublicDiscoveryService $discovery): Response
     {
         $shellPath = public_path('spa.html');
         if (! is_file($shellPath)) {
@@ -38,6 +39,27 @@ class SpaController extends Controller
             $meta = $this->resolveMeta($request);
         }
 
+        $status = 200;
+        $structuredData = null;
+        if (! $request->is('admin', 'admin/*')) {
+            try {
+                $public = $discovery->forPath($request->path());
+                $status = $public['status'];
+                $html = str_replace('<div id="root"></div>', '<div id="root">'.$public['html'].'</div>', $html);
+                if ($status !== 200 || $request->hasAny(['token', 'reference', 'ref'])) {
+                    $meta['robots'] = 'noindex,nofollow';
+                }
+                if ($public['graph'] !== [] && ! str_starts_with($meta['robots'], 'noindex')) {
+                    $structuredData = '<script type="application/ld+json">'.json_encode(
+                        ['@context' => 'https://schema.org', '@graph' => $public['graph']],
+                        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+                    ).'</script>';
+                }
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
+
         $tags = implode("\n    ", array_filter([
             '<link rel="icon" type="image/webp" href="/logo.webp" />',
             '<link rel="apple-touch-icon" href="/logo.jpg" />',
@@ -51,6 +73,7 @@ class SpaController extends Controller
             '<meta property="og:type" content="website" />',
             $meta['canonical'] ? '<meta property="og:url" content="'.e($meta['canonical']).'" />' : null,
             $meta['og_image'] ? '<meta property="og:image" content="'.e($meta['og_image']).'" />' : null,
+            $structuredData,
         ]));
 
         // Replace default <title> and robots meta in the SPA shell with resolved SEO tags.
@@ -58,9 +81,10 @@ class SpaController extends Controller
         $html = preg_replace('/<meta\s+name=["\']robots["\'][^>]*>/i', '', $html) ?? $html;
         $html = str_replace('</head>', "    {$tags}\n  </head>", $html);
 
-        return response($html, 200, [
+        return response($html, $status, [
             'Content-Type' => 'text/html; charset=UTF-8',
             'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'X-Robots-Tag' => $meta['robots'],
         ]);
     }
 
@@ -99,7 +123,7 @@ class SpaController extends Controller
 
         $title = $defaultTitle;
         $desc = $defaultDesc;
-        $canonical = url($path === '' ? '/' : "/{$path}");
+        $canonical = rtrim(config('app.url'), '/').($path === '' ? '/' : "/{$path}");
         $robots = 'index,follow';
 
         try {
