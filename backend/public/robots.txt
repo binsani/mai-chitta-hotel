@@ -3,6 +3,17 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /api/
+Allow: /api/v1/public/bootstrap$
+Allow: /api/v1/pages$
+Allow: /api/v1/pages/
+Allow: /api/v1/rooms$
+Allow: /api/v1/rooms/
+Allow: /api/v1/offers$
+Allow: /api/v1/offers/
+Allow: /api/v1/gallery$
+Allow: /api/v1/testimonials$
+Allow: /api/v1/public/room-types$
+Allow: /api/v1/public/rate-plans$
 Disallow: /sanctum/
 
 Sitemap: https://maichittahotel.com/sitemap.xml
