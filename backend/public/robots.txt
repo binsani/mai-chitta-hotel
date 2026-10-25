@@ -1,2 +1,6 @@
 User-agent: *
-Disallow:
+Disallow: /admin/
+Disallow: /api/
+Disallow: /sanctum/
+
+Sitemap: https://maichittahotel.com/sitemap.xml
