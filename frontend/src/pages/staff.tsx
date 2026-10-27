@@ -4,6 +4,7 @@ import { useAuth } from '@/auth/AuthProvider'
 import { api, errorMessage, type Paginated } from '@/lib/api'
 import { formatDateTime } from '@/lib/utils'
 import { Alert, Badge, Button, Card, DataTable, FormField, Input, Modal, PageHeader, Select, Textarea } from '@/components/ui'
+import { StaffIdCard } from '@/components/StaffIdCard'
 
 type Inquiry = { id: number; name: string; email: string; phone: string | null; subject: string; message: string; status: string; created_at: string }
 
@@ -57,6 +58,7 @@ export function HumanResourcesPage() {
   const [period, setPeriod] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }).slice(0, 7))
   const [editing, setEditing] = useState<number | null>(null)
   const [employeeOpen, setEmployeeOpen] = useState(false)
+  const [cardEmployee, setCardEmployee] = useState<Employee | null>(null)
   const [form, setForm] = useState(blankEmployee)
   const [payrollOpen, setPayrollOpen] = useState(false)
   const [employeeSearch, setEmployeeSearch] = useState('')
@@ -99,6 +101,7 @@ export function HumanResourcesPage() {
         { key: 'job', header: 'Position', cell: r => <>{r.job_title}<br />{r.department}</> },
         { key: 'contact', header: 'Contact', cell: r => <>{r.email}<br />{r.phone}</> },
         { key: 'status', header: 'Status', cell: r => r.status.replace('_', ' ') },
+        { key: 'id-card', header: 'ID card', cell: r => can('hr.edit') ? <Button size="sm" variant="secondary" disabled={r.status === 'inactive'} onClick={() => setCardEmployee(r)}>Generate ID card</Button> : '—' },
         { key: 'edit', header: 'Details', cell: r => can('hr.edit') ? <Button size="sm" variant="secondary" onClick={() => edit(r)}>Edit</Button> : can('hr.confidential') ? <p className="whitespace-pre-wrap">{r.confidential_notes || 'No confidential notes'}</p> : '—' },
       ]} /></Card>
     </> : <>
@@ -117,6 +120,7 @@ export function HumanResourcesPage() {
         { key: 'review', header: 'Review', cell: r => can('payroll.approve') && r.status === 'pending' && r.prepared_by !== user?.id ? <div className="flex gap-2"><Button size="sm" disabled={review.isPending} onClick={() => review.mutate({ id: r.id, status: 'approved' })}>Approve</Button><Button size="sm" variant="danger" disabled={review.isPending} onClick={() => review.mutate({ id: r.id, status: 'rejected' })}>Reject</Button></div> : '—' },
       ]} /></Card>
     </>}
+    {cardEmployee && can('hr.edit') && <StaffIdCard key={cardEmployee.id} employee={cardEmployee} onClose={() => setCardEmployee(null)} />}
     <Modal open={employeeOpen} onOpenChange={setEmployeeOpen} title={editing ? 'Edit employee' : 'Add employee'}>
       <form className="space-y-4" onSubmit={e => { e.preventDefault(); save.mutate() }}>
         {save.isError && <Alert variant="error">{errorMessage(save.error)}</Alert>}
