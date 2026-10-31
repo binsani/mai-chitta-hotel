@@ -2,10 +2,19 @@
 
 namespace App\Services;
 
+use App\Models\InventoryItem;
+use App\Models\MenuItem;
+use App\Models\PosOutlet;
+use App\Models\RatePlanRoomType;
+use App\Models\Room;
+use App\Models\RoomType;
 use App\Models\Setting;
+use App\Models\Supplier;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Ordinary (non-secret) system configuration stored in the `settings` table.
@@ -131,6 +140,36 @@ class SettingsService
         CmsService::bumpPublicCache();
 
         return $changes;
+    }
+
+    /** @return list<array{label: string, ready: bool, detail: string, href: string}> */
+    public function setupChecklist(): array
+    {
+        $settings = $this->all();
+        $roomTypes = RoomType::where('is_active', true)->count();
+        $rooms = Room::where('operational_status', 'active')->count();
+        $rates = RatePlanRoomType::where('is_active', true)->whereHas('ratePlan', fn ($q) => $q->where('is_active', true))->count();
+        $hrReady = Schema::hasTable('employees') && Schema::hasTable('payroll_entries');
+        $lastRun = Cache::get('hotel.scheduler.last_run');
+        $backup = is_file(storage_path('backups/latest.json')) ? json_decode(file_get_contents(storage_path('backups/latest.json')), true) : null;
+        $lastBackup = $backup['created_at'] ?? null;
+        $mailerReady = $this->integrationStatus()['mail']['configured'];
+        $provider = $settings['booking']['online_payment_provider'];
+        $paymentReady = $provider !== 'none' && ($this->integrationStatus()['payments'][$provider.'_configured'] ?? false);
+
+        return [
+            ['label' => 'Hotel contact email', 'ready' => filled($settings['hotel']['email']), 'detail' => $settings['hotel']['email'] ?: 'Add the official hotel contact email.', 'href' => '/admin/settings'],
+            ['label' => 'Outgoing email', 'ready' => $mailerReady, 'detail' => $mailerReady ? 'Mail transport configured. Confirm receipt of a test message.' : 'Email delivery is not configured.', 'href' => '/admin/settings'],
+            ['label' => 'Rooms and room types', 'ready' => $roomTypes > 0 && $rooms > 0, 'detail' => $roomTypes.' active room types; '.$rooms.' active physical rooms.', 'href' => '/admin/room-types'],
+            ['label' => 'Room prices', 'ready' => $rates > 0, 'detail' => $rates.' active room-type rates. Enter the hotel’s approved prices.', 'href' => '/admin/rate-plans'],
+            ['label' => 'HR and payroll', 'ready' => $hrReady, 'detail' => $hrReady ? 'Staff records, payroll and ID card tools are available.' : 'HR database updates are pending.', 'href' => '/admin/hr'],
+            ['label' => 'Background processing', 'ready' => $lastRun && Carbon::parse($lastRun)->greaterThan(now()->subMinutes(5)), 'detail' => $lastRun ? 'Last scheduler run: '.$lastRun : 'No hotel scheduler run recorded yet.', 'href' => '/admin/settings'],
+            ['label' => 'Private backups', 'ready' => $lastBackup && Carbon::parse($lastBackup)->greaterThan(now()->subDays(2)), 'detail' => $lastBackup ? 'Last verified archive: '.$lastBackup : 'No verified hotel backup recorded yet.', 'href' => '/admin/settings'],
+            ['label' => 'Online reservations', 'ready' => (bool) $settings['booking']['online_booking_enabled'], 'detail' => $settings['booking']['online_booking_enabled'] ? 'Enabled. Review inventory, prices and policies before accepting bookings.' : 'Disabled until inventory, prices and policies are approved.', 'href' => '/admin/reservation-settings'],
+            ['label' => 'Online card payments (optional)', 'ready' => $paymentReady, 'detail' => $paymentReady ? 'Provider configured; complete a provider test payment before launch.' : 'Select a provider and configure its credentials before accepting online payments.', 'href' => '/admin/reservation-settings'],
+            ['label' => 'Restaurant / POS setup', 'ready' => PosOutlet::where('is_active', true)->exists() && MenuItem::where('is_active', true)->exists(), 'detail' => 'Add the real outlets, menu items and prices if the hotel uses restaurant/POS.', 'href' => '/admin/pos'],
+            ['label' => 'Stock and suppliers', 'ready' => InventoryItem::exists() && Supplier::exists(), 'detail' => 'Enter actual stock, opening quantities and approved suppliers.', 'href' => '/admin/inventory'],
+        ];
     }
 
     /** Read-only status of integrations configured via environment (no secrets returned). */

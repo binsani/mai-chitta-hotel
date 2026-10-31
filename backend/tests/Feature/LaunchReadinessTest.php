@@ -8,12 +8,33 @@ use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class LaunchReadinessTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_setup_checklist_exposes_actual_setup_status_only_to_authorized_administrators(): void
+    {
+        $this->freezeTime();
+        Cache::put('hotel.scheduler.last_run', now()->toIso8601String());
+        $admin = $this->actor('super-admin');
+        $response = $this->actingAs($admin)->getJson('/api/v1/dashboard')->assertOk();
+        $checks = array_column($response->json('data.setup_checklist'), null, 'label');
+        $this->assertFalse($checks['Rooms and room types']['ready']);
+        $this->assertFalse($checks['Room prices']['ready']);
+        $this->assertTrue($checks['HR and payroll']['ready']);
+        $this->assertTrue($checks['Background processing']['ready']);
+        $this->assertFalse($checks['Online reservations']['ready']);
+        $response->assertJsonMissingPath('data.setup_checklist.0.password');
+
+        Cache::put('hotel.scheduler.last_run', now()->subMinutes(10)->toIso8601String());
+        $checks = array_column($this->getJson('/api/v1/dashboard')->assertOk()->json('data.setup_checklist'), null, 'label');
+        $this->assertFalse($checks['Background processing']['ready']);
+        $this->actingAs($this->actor('receptionist'))->getJson('/api/v1/dashboard')->assertOk()->assertJsonMissingPath('data.setup_checklist');
+    }
 
     protected function setUp(): void
     {

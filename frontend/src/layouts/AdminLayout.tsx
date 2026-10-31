@@ -6,6 +6,39 @@ import { useAuth } from '@/auth/AuthProvider'
 import { allNavItems, navigation } from '@/lib/navigation'
 import { Spinner } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { api, errorMessage } from '@/lib/api'
+import { formatDateTime } from '@/lib/utils'
+
+type OperationalAlert = { id: number; title: string; message: string; severity: string; is_read: boolean; created_at: string }
+
+function OperationalAlerts() {
+  const { user } = useAuth()
+  const client = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const key = ['operational-alerts', user?.id]
+  const alerts = useQuery({ queryKey: key, enabled: !!user, refetchInterval: 60_000, queryFn: async ({ signal }) => (await api.get<{ data: OperationalAlert[]; unread_count: number }>('/admin/operational-notifications', { signal })).data })
+  const acknowledge = useMutation({ mutationFn: async (id: number) => api.post(`/admin/operational-notifications/${id}/read`), onSuccess: () => client.invalidateQueries({ queryKey: key }) })
+  const unread = alerts.data?.unread_count ?? 0
+  return <DropdownMenu.Root open={open} onOpenChange={setOpen}>
+    <DropdownMenu.Trigger className="relative rounded-full p-2 text-slate-500 hover:bg-slate-100" aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}>
+      <Bell className="h-5 w-5" />{unread > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-red-600 px-1 text-[10px] text-white">{unread > 99 ? '99+' : unread}</span>}
+    </DropdownMenu.Trigger>
+    <DropdownMenu.Portal><DropdownMenu.Content align="end" sideOffset={6} className="z-50 max-h-[70vh] w-[min(24rem,90vw)] overflow-y-auto rounded-md border border-slate-200 bg-white p-4 text-sm shadow-lg">
+      <h2 className="font-semibold text-slate-800">Operational notifications</h2>
+      <p className="mb-3 text-xs text-slate-500">Team alerts are shared with staff who have the relevant permission.</p>
+      {alerts.isLoading && <p>Loading notifications…</p>}
+      {alerts.isError && <div role="alert">{errorMessage(alerts.error)} <button className="underline" onClick={() => alerts.refetch()}>Retry</button></div>}
+      {acknowledge.isError && <p role="alert" className="text-red-700">{errorMessage(acknowledge.error)}</p>}
+      {alerts.data?.data.length === 0 && <p className="text-slate-500">No operational notifications yet.</p>}
+      <ul className="divide-y divide-slate-100">{alerts.data?.data.map(alert => <li key={alert.id} className={`py-3 ${alert.is_read ? 'text-slate-500' : 'text-slate-900'}`}>
+        <p className="font-medium">{alert.title}</p><p className="mt-1 whitespace-pre-wrap break-words">{alert.message}</p>
+        <p className={`mt-1 text-xs ${alert.severity === 'critical' ? 'text-red-700' : 'text-slate-500'}`}>{alert.severity} · {formatDateTime(alert.created_at)}</p>
+        {!alert.is_read && <button className="mt-2 text-xs font-medium text-brand-700 underline disabled:opacity-50" disabled={acknowledge.isPending} onClick={() => acknowledge.mutate(alert.id)}>Acknowledge</button>}
+      </li>)}</ul>
+    </DropdownMenu.Content></DropdownMenu.Portal>
+  </DropdownMenu.Root>
+}
 
 export function RequireAuth() {
   const { user, isLoading } = useAuth()
@@ -110,17 +143,7 @@ export function AdminLayout() {
             <Link to="/" className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
               <ExternalLink className="h-3.5 w-3.5" aria-hidden /> View Website
             </Link>
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger className="relative rounded-full p-2 text-slate-500 hover:bg-slate-100" aria-label="Notifications">
-                <Bell className="h-5 w-5" />
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content align="end" sideOffset={6} className="z-50 w-72 rounded-md border border-slate-200 bg-white p-4 text-sm shadow-lg">
-                  <p className="font-medium text-slate-800">Notifications</p>
-                  <p className="mt-1 text-slate-500">You have no notifications. Operational alerts will appear here as modules are introduced.</p>
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
+            <OperationalAlerts />
 
             <DropdownMenu.Root>
               <DropdownMenu.Trigger className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-slate-100">

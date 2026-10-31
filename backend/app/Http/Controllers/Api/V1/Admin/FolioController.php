@@ -279,23 +279,30 @@ class FolioController extends Controller
     public function notifications(Request $request): JsonResponse
     {
         $user = $request->user();
-        $notifications = OperationalNotification::query()
+        $query = OperationalNotification::query()
             ->where(function ($q) use ($user) {
                 $q->where('target_user_id', $user->id)
                     ->orWhereNull('target_user_id');
             })
+            ->where(fn ($q) => $q->whereNull('target_permission')->orWhereIn('target_permission', $user->permissionSlugs()));
+        $unread = (clone $query)->where('is_read', false)->count();
+        $notifications = $query
             ->orderBy('is_read')
             ->orderByDesc('id')
             ->limit(30)
-            ->get()
-            ->filter(fn (OperationalNotification $n) => ! $n->target_permission || $user->hasPermission($n->target_permission))
-            ->values();
+            ->get(['id', 'type', 'severity', 'title', 'message', 'is_read', 'created_at']);
 
-        return response()->json(['data' => $notifications]);
+        return response()->json(['data' => $notifications, 'unread_count' => $unread]);
     }
 
     public function markNotificationRead(Request $request, OperationalNotification $operationalNotification): JsonResponse
     {
+        $user = $request->user();
+        abort_if(
+            ($operationalNotification->target_user_id !== null && $operationalNotification->target_user_id !== $user->id)
+            || ($operationalNotification->target_permission && ! $user->hasPermission($operationalNotification->target_permission)),
+            404
+        );
         $operationalNotification->update([
             'is_read' => true,
             'read_at' => now(),

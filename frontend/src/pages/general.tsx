@@ -11,6 +11,7 @@ import { formatDateTime, zodResolver } from '@/lib/utils'
 import { Alert, Badge, Button, Card, CardHeader, EmptyState, ErrorState, FormField, Input, PageHeader, Spinner } from '@/components/ui'
 
 type DashboardData = {
+  setup_checklist?: { label: string; ready: boolean; detail: string; href: string }[]
   hotel: Record<string, string | null>
   server_time: string
   environment: string
@@ -78,6 +79,14 @@ export function DashboardPage() {
             {q.data.recent_failed_logins !== undefined && <Stat label="Failed sign-ins (24h)" value={q.data.recent_failed_logins} hint="From the audit log" />}
           </div>
 
+          {q.data.setup_checklist && <Card>
+            <CardHeader title="Hotel setup checklist" description="Live setup status. Complete these items using the hotel’s actual information before starting daily operations." />
+            <ul className="divide-y divide-slate-100 px-5">{q.data.setup_checklist.map(item => <li key={item.label} className="flex flex-wrap items-center justify-between gap-3 py-4">
+              <div className="min-w-0 flex-1"><p className="font-medium text-slate-900">{item.label}</p><p className="mt-1 text-sm text-slate-500">{item.detail}</p></div>
+              <Badge tone={item.ready ? 'success' : 'warning'}>{item.ready ? 'Ready' : 'Needs attention'}</Badge>
+              <Link className="text-sm font-medium text-brand-700 underline" to={item.href}>Open</Link>
+            </li>)}</ul>
+          </Card>}
           <div className="grid gap-6 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <CardHeader title="Your modules" description="Modules you have permission to access." />

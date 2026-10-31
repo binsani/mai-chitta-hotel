@@ -1,5 +1,8 @@
 <?php
 
+use App\Services\AvailabilityService;
+use App\Services\InventoryService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -17,10 +20,18 @@ Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
     ->everyMinute()
     ->withoutOverlapping(2);
 
+Schedule::call(fn () => Cache::put('hotel.scheduler.last_run', now()->toIso8601String(), now()->addDay()))
+    ->name('hotel:scheduler-heartbeat')->everyMinute();
+
+Schedule::command('hotel:backup')->dailyAt('02:15')->timezone('Africa/Lagos')->withoutOverlapping(30);
+
+Schedule::call(fn () => app(InventoryService::class)->checkExpiringBatches())
+    ->name('inventory:expiry-alerts')->dailyAt('07:00')->timezone('Africa/Lagos')->withoutOverlapping(10);
+
 Schedule::command('auth:clear-resets')->hourly();
 Schedule::command('sanctum:prune-expired --hours=24')->daily();
 
 // Expire stale booking holds every minute so abandoned online checkouts release inventory promptly.
 Schedule::call(function () {
-    app(\App\Services\AvailabilityService::class)->releaseExpiredHolds();
+    app(AvailabilityService::class)->releaseExpiredHolds();
 })->name('reservations:expire-holds')->everyMinute()->withoutOverlapping(2);

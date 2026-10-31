@@ -5,13 +5,29 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateSettingsRequest;
 use App\Models\AuditLog;
+use App\Models\ContactInquiry;
+use App\Models\FolioEntry;
+use App\Models\GuestFolio;
+use App\Models\HousekeepingTask;
+use App\Models\InventoryItem;
+use App\Models\MaintenanceWorkOrder;
+use App\Models\MediaAsset;
+use App\Models\Offer;
+use App\Models\Page;
+use App\Models\PosOrder;
+use App\Models\PosOutlet;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseRequisition;
+use App\Models\Reservation;
 use App\Models\Role;
+use App\Models\Room;
+use App\Models\RoomContent;
+use App\Models\RoomType;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\SettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 
 class SettingsController extends Controller
 {
@@ -64,12 +80,12 @@ class SettingsController extends Controller
         }
         if ($user->can('website.view')) {
             $data['cms_counts'] = [
-                'published_pages' => \App\Models\Page::where('status', 'published')->count(),
-                'draft_pages' => \App\Models\Page::where('status', 'draft')->count(),
-                'media_assets' => \App\Models\MediaAsset::count(),
-                'published_rooms' => \App\Models\RoomContent::where('status', 'published')->count(),
-                'published_offers' => \App\Models\Offer::where('status', 'published')->count(),
-                'new_inquiries' => \App\Models\ContactInquiry::where('status', 'new')->count(),
+                'published_pages' => Page::where('status', 'published')->count(),
+                'draft_pages' => Page::where('status', 'draft')->count(),
+                'media_assets' => MediaAsset::count(),
+                'published_rooms' => RoomContent::where('status', 'published')->count(),
+                'published_offers' => Offer::where('status', 'published')->count(),
+                'new_inquiries' => ContactInquiry::where('status', 'new')->count(),
             ];
         }
         if ($user->can('audit.view')) {
@@ -79,34 +95,37 @@ class SettingsController extends Controller
         if ($user->can('settings.view') || $user->can('reservations.settings')) {
             $data['integrations'] = $this->settings->integrationStatus();
         }
+        if ($user->can('settings.view')) {
+            $data['setup_checklist'] = $this->settings->setupChecklist();
+        }
         if ($user->hasAnyPermission(['reservations.view', 'frontdesk.view', 'rooms.view'])) {
             $today = now()->format('Y-m-d');
             $data['reservation_counts'] = [
-                'room_types' => \App\Models\RoomType::where('is_active', true)->count(),
-                'physical_rooms' => \App\Models\Room::where('operational_status', 'active')->count(),
-                'confirmed_reservations' => \App\Models\Reservation::where('status', 'confirmed')->count(),
-                'checked_in_reservations' => \App\Models\Reservation::where('status', 'checked_in')->count(),
-                'today_arrivals' => \App\Models\Reservation::whereDate('check_in_date', $today)->whereIn('status', ['confirmed', 'pending_payment'])->count(),
-                'today_departures' => \App\Models\Reservation::whereDate('check_out_date', $today)->where('status', 'checked_in')->count(),
+                'room_types' => RoomType::where('is_active', true)->count(),
+                'physical_rooms' => Room::where('operational_status', 'active')->count(),
+                'confirmed_reservations' => Reservation::where('status', 'confirmed')->count(),
+                'checked_in_reservations' => Reservation::where('status', 'checked_in')->count(),
+                'today_arrivals' => Reservation::whereDate('check_in_date', $today)->whereIn('status', ['confirmed', 'pending_payment'])->count(),
+                'today_departures' => Reservation::whereDate('check_out_date', $today)->where('status', 'checked_in')->count(),
             ];
         }
         if ($user->hasAnyPermission(['housekeeping.view', 'maintenance.view', 'folios.view'])) {
             $data['operations_counts'] = [
-                'housekeeping_open' => \App\Models\HousekeepingTask::whereIn('status', \App\Models\HousekeepingTask::ACTIVE_STATUSES)->count(),
-                'rooms_dirty' => \App\Models\Room::where('housekeeping_status', 'dirty')->count(),
-                'rooms_awaiting_inspection' => \App\Models\Room::where('housekeeping_status', 'inspecting')->count(),
-                'maintenance_open' => \App\Models\MaintenanceWorkOrder::whereIn('status', \App\Models\MaintenanceWorkOrder::OPEN_STATUSES)->count(),
-                'open_folios' => \App\Models\GuestFolio::where('status', 'open')->count(),
-                'pending_folio_adjustments' => \App\Models\FolioEntry::where('status', 'pending_approval')->count(),
+                'housekeeping_open' => HousekeepingTask::whereIn('status', HousekeepingTask::ACTIVE_STATUSES)->count(),
+                'rooms_dirty' => Room::where('housekeeping_status', 'dirty')->count(),
+                'rooms_awaiting_inspection' => Room::where('housekeeping_status', 'inspecting')->count(),
+                'maintenance_open' => MaintenanceWorkOrder::whereIn('status', MaintenanceWorkOrder::OPEN_STATUSES)->count(),
+                'open_folios' => GuestFolio::where('status', 'open')->count(),
+                'pending_folio_adjustments' => FolioEntry::where('status', 'pending_approval')->count(),
             ];
         }
         if ($user->hasAnyPermission(['pos.view', 'inventory.view', 'procurement.view'])) {
             $data['phase5_counts'] = [
-                'pos_outlets' => \App\Models\PosOutlet::where('is_active', true)->count(),
-                'active_pos_orders' => \App\Models\PosOrder::whereIn('status', ['submitted', 'preparing', 'ready', 'out_for_delivery'])->count(),
-                'low_stock_items' => \App\Models\InventoryItem::where('is_active', true)->where('reorder_level', '>', 0)->whereColumn('current_stock', '<=', 'reorder_level')->count(),
-                'pending_requisitions' => \App\Models\PurchaseRequisition::where('status', 'pending_approval')->count(),
-                'pending_purchase_orders' => \App\Models\PurchaseOrder::where('status', 'pending_approval')->count(),
+                'pos_outlets' => PosOutlet::where('is_active', true)->count(),
+                'active_pos_orders' => PosOrder::whereIn('status', ['submitted', 'preparing', 'ready', 'out_for_delivery'])->count(),
+                'low_stock_items' => InventoryItem::where('is_active', true)->where('reorder_level', '>', 0)->whereColumn('current_stock', '<=', 'reorder_level')->count(),
+                'pending_requisitions' => PurchaseRequisition::where('status', 'pending_approval')->count(),
+                'pending_purchase_orders' => PurchaseOrder::where('status', 'pending_approval')->count(),
             ];
         }
 
