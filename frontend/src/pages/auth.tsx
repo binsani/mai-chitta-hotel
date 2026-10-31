@@ -45,7 +45,10 @@ export function LoginPage() {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '', remember: false },
   })
-  const from = (location.state as { from?: string } | null)?.from ?? '/admin'
+  const requestedPath = (location.state as { from?: string } | null)?.from
+  const from = requestedPath?.startsWith('/admin/') && ! /^\/admin\/(login|forgot-password|reset-password)(\/|\?|#|$)/.test(requestedPath)
+    ? requestedPath
+    : '/admin'
   if (user) return <Navigate to={from} replace />
 
   const onSubmit = handleSubmit(async (v) => {

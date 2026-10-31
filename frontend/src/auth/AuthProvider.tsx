@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, csrf } from '@/lib/api'
+import { AUTH_USER_QUERY_KEY as ME, replaceAuthSession } from './session'
 
 export type Role = { id: number; slug: string; name: string }
 export type User = {
@@ -24,15 +25,13 @@ type AuthContextValue = {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
-const ME = ['auth', 'user']
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient()
   const { data: user = null, isLoading } = useQuery({
     queryKey: ME,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       try {
-        return (await api.get<{ data: User }>('/auth/user')).data.data
+        return (await api.get<{ data: User }>('/auth/user', { signal })).data.data
       } catch (e: unknown) {
         if ((e as { response?: { status?: number } }).response?.status === 401) return null
         throw e
@@ -50,19 +49,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [qc])
 
   const login = useCallback(async (email: string, password: string, remember: boolean) => {
+    await qc.cancelQueries()
     await csrf()
     const res = await api.post<{ user: { data?: User } & User }>('/auth/login', { email, password, remember })
     const u = res.data.user.data ?? res.data.user
-    qc.clear()
-    qc.setQueryData(ME, u)
+    await replaceAuthSession(qc, u)
   }, [qc])
 
   const logout = useCallback(async () => {
     try {
       await api.post('/auth/logout')
     } finally {
-      qc.clear()
-      qc.setQueryData(ME, null)
+      await replaceAuthSession(qc, null)
     }
   }, [qc])
 
