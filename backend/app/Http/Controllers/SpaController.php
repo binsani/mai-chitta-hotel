@@ -8,6 +8,7 @@ use App\Models\RoomContent;
 use App\Services\CmsService;
 use App\Services\PublicDiscoveryService;
 use App\Services\SettingsService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
@@ -22,8 +23,17 @@ class SpaController extends Controller
 {
     public function __construct(private SettingsService $settings) {}
 
-    public function __invoke(Request $request, PublicDiscoveryService $discovery): Response
+    public function __invoke(Request $request, PublicDiscoveryService $discovery): Response|RedirectResponse
     {
+        $primaryUrl = rtrim((string) config('app.url'), '/');
+        $primaryHost = parse_url($primaryUrl, PHP_URL_HOST);
+        if ($primaryHost && $request->getHost() === 'www.'.$primaryHost && $request->is('admin', 'admin/*')) {
+            return redirect()->away($primaryUrl.$request->getRequestUri())->withHeaders([
+                'Cache-Control' => 'no-store',
+                'X-Robots-Tag' => 'noindex,nofollow',
+            ]);
+        }
+
         $shellPath = public_path('spa.html');
         if (! is_file($shellPath)) {
             $shellPath = public_path('admin/index.html');
